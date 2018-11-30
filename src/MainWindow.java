@@ -4,7 +4,6 @@ import java.nio.FloatBuffer;
 
 import GraphicsObjects.Point4f;
 import GraphicsObjects.Vector4f;
-import com.sun.tools.corba.se.idl.constExpr.Or;
 import objects3D.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -143,12 +142,11 @@ public class MainWindow {
 
 		if (dragMode) {
 		    // TODO close the arc ball
-			//MyArcball.updateBall(MouseX, MouseY, 1200, 800);
+			MyArcball.updateBall(MouseX, MouseY, 1200, 800);
 		}
 
 		if (WheelPosition > 0) {
 			OrthoNumber += 10;
-            System.out.println(OrthoNumber);
 		}
 
 		if (WheelPosition < 0) {
@@ -267,17 +265,6 @@ public class MainWindow {
 		changeOrtho();
 		MyArcball.startBall(0, 0, 1200, 800);
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-//		FloatBuffer lightPos = BufferUtils.createFloatBuffer(4);
-//		lightPos.put(0f).put(1000f).put(1000).put(0).flip();
-//
-//		FloatBuffer lightPos2 = BufferUtils.createFloatBuffer(4);
-//		lightPos2.put(0f).put(1000f).put(0).put(-1000f).flip();
-//
-//		FloatBuffer lightPos3 = BufferUtils.createFloatBuffer(4);
-//		lightPos3.put(-10000f).put(1000f).put(1000).put(0).flip();
-//
-//		FloatBuffer lightPos4 = BufferUtils.createFloatBuffer(4);
-//		lightPos4.put(1000f).put(1000f).put(1000f).put(0).flip();
 		FloatBuffer lightPos = BufferUtils.createFloatBuffer(4);
 		lightPos.put(0f).put(1000f).put(1000).put(0).flip();
 
@@ -343,28 +330,26 @@ public class MainWindow {
 
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
 		GL11.glLoadIdentity();
-		GL11.glOrtho(1200 - OrthoNumber - 100, OrthoNumber, (800 - (OrthoNumber * 0.66f)), (OrthoNumber * 0.66f) + 200, 100000,
+		GL11.glOrtho(1200 - OrthoNumber - 100, OrthoNumber, (800 - (OrthoNumber * 0.66f)) - 200, (OrthoNumber * 0.66f) + 200, 100000,
 				-100000);
 		loadMatrix();
 	}
 	public void changeOrtho(float speed) {
-		System.out.println("launch"+speed);
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
 		GL11.glLoadIdentity();
-		GL11.glOrtho(1200 - OrthoNumber - 1000, OrthoNumber, (800 - (OrthoNumber * 0.66f)) + 900 + speed, (OrthoNumber * 0.66f)+ 1100 + speed, 100000,
+		GL11.glOrtho(1200 - OrthoNumber - 1000, OrthoNumber, (800 - (OrthoNumber * 0.66f)) + 700 + speed, (OrthoNumber * 0.66f)+ 1100 + speed, 100000,
 				-100000);
 		loadMatrix();
 	}
 	public void changeOrthoToRocket(float speed){
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
 		GL11.glLoadIdentity();
-		System.out.println(speed);
 		float expendSpeed = speed * 300;
 		float scaleSpeed = speed * 10;
 		if(expendSpeed > 900) expendSpeed = 900;
 		OrthoNumber += scaleSpeed;
 		if(OrthoNumber > 3000) OrthoNumber = 3000;
-		GL11.glOrtho(1200 - OrthoNumber-expendSpeed - 100, OrthoNumber, (800 - (OrthoNumber * 0.66f))+ expendSpeed , (OrthoNumber * 0.66f)+200+expendSpeed, 100000,
+		GL11.glOrtho(1200 - OrthoNumber-expendSpeed - 100, OrthoNumber, (800 - (OrthoNumber * 0.66f))+ expendSpeed -200, (OrthoNumber * 0.66f)+200+expendSpeed, 100000,
 				-100000);
 		loadMatrix();
 	}
@@ -452,8 +437,7 @@ public class MainWindow {
             GL11.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
             GL11.glColor3f(0.5f, 0.5f, 1.0f);
 
-
-            // TODO rotate human
+            drawHuman(temp + 0.3477f);
             drawRocket(temp * 4);
             drawBackground();
             drawController();
@@ -467,7 +451,6 @@ public class MainWindow {
 			changeOrthoToRocket(delta*10);
 		}else{
 			float temp = delta - 0.3477f;
-			System.out.println("now:"+temp);
 			//delta = (delta * 10 - 4.5f) / 10;
 			changeOrtho(temp * temp * 1000);
 		}
@@ -580,7 +563,6 @@ public class MainWindow {
 	}
 
 	public void drawHuman(float speed) {
-		System.out.println("human"+speed);
 		GL11.glPushMatrix();
 		Human MyHuman = new Human();
 		float sizeHuman = 40f;
@@ -589,21 +571,23 @@ public class MainWindow {
 		MyHuman.upperbody_texture = upperbody_texture;
 		MyHuman.lowerbody_texture = lowerbody_texture;
 		MyHuman.joint_texture = joint_texture;
-		float theta = (float) (speed * 2 * Math.PI);
-		float thetaDeg = speed * 360;
-		float posn_x = (float) Math.cos(theta); // same as your circle code in your notes
-		float posn_y = (float) Math.sin(theta);
+
 		// TODO: the position of human
 		GL11.glTranslatef(1053, sizeHuman*1.5f, -10);
 		GL11.glScalef(sizeHuman, sizeHuman, sizeHuman);
 
 		if (isLaunched) {
-			// TODO  look at animation
+
+			// TODO  human animation
+            float temp = speed - 0.3477f;
+            float theta = (float) (temp * 2 * Math.PI);
+            float thetaDeg = temp * 360;
+            float posn_x = (float) Math.cos(theta); // same as your circle code in your notes
+            float posn_y = (float) Math.sin(theta);
 			// insert your animation code to correct the position for the human rotating
 			//GL11.glTranslatef(speed, 0.0f, -10f);
-			//System.out.println(delta);
-			//GL11.glTranslatef(posn_x * 16 -25, 0, posn_y * 16);
-			///GL11.glRotatef(-thetaDeg , 0.0f, 1.0f, 0.0f);
+			GL11.glTranslatef(-temp*10, temp*50, temp*10);
+			GL11.glRotatef(-thetaDeg / 4 , 0.0f, 1.0f, 0.0f);
 		} else {
 //			GL11.glTranslatef(posn_x * 16 -25, speed * 10, posn_y * 16);
 //			GL11.glRotatef(-thetaDeg , 0.0f, 1.0f, 0.0f);
@@ -648,7 +632,7 @@ public class MainWindow {
 		lowerbody_texture = TextureLoader.getTexture("JPG", ResourceLoader.getResourceAsStream("res/lowerbody.jpg"));
 		joint_texture = TextureLoader.getTexture("JPG", ResourceLoader.getResourceAsStream("res/joint.jpg"));
 		background_sky = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/background_sky.jpg"));
-		ground_texture = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/ground.jpg"));
+		ground_texture = TextureLoader.getTexture("PNG",ResourceLoader.getResourceAsStream("res/2018.png"));
 		System.out.println("Texture loaded okay ");
 	}
 
