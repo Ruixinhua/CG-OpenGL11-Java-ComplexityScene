@@ -1,7 +1,7 @@
 package objects3D;
 
+import GraphicsObjects.Utils;
 import org.lwjgl.opengl.GL11;
-import org.newdawn.slick.opengl.Texture;
 
 import GraphicsObjects.Point4f;
 import GraphicsObjects.Vector4f;
@@ -23,7 +23,6 @@ public class Cube {
 
 		int faces[][] = { { 0, 4, 5, 1 }, { 0, 2, 6, 4 }, { 0, 1, 3, 2 }, { 4, 6, 7, 5 }, { 1, 5, 7, 3 },
 				{ 2, 3, 7, 6 } };
-
 		GL11.glBegin(GL11.GL_QUADS);
 		//draw the six faces of cube
 		for (int face = 0; face < 6; face++) { // per face

@@ -9,7 +9,7 @@ import org.newdawn.slick.util.ResourceLoader;
 import GraphicsObjects.Point4f;
 import GraphicsObjects.Utils;
 
-public class TexSphere {
+public class TexSphere extends Sphere{
 	static float red[] = { 1.0f, 0.0f, 0.0f, 1.0f };
 	static float green[] = { 0.0f, 1.0f, 0.0f, 1.0f };
 	static float blue[] = { 0.0f, 0.0f, 1.0f, 1.0f };
@@ -18,14 +18,7 @@ public class TexSphere {
 	public TexSphere() {
 
 	}
-	//get the point in specific phi and theta with radius
-	public Point4f getPoint(float radius,float phi, float theta) {
-		float r = (float)(radius * Math.cos(phi));
-		float x = (float)(r * Math.cos(theta));
-		float y = (float)(r * Math.sin(theta));
-		float z = (float)(radius * Math.sin(phi));
-		return new Point4f(x,y,z,0f);
-	}
+
 	public float[] getTS(float phi, float theta ) {
 		return new float[] {(float) (phi / (float) Math.PI) + 0.5f,(float) (theta / Math.PI * 2.0f) + 0.5f};
 	}

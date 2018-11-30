@@ -1,12 +1,9 @@
 package objects3D;
 
 import org.lwjgl.opengl.GL11;
-import org.newdawn.slick.Color;
 import org.newdawn.slick.opengl.Texture;
 
-import GraphicsObjects.Point4f;
 import GraphicsObjects.Utils;
-import GraphicsObjects.Vector4f;
 
 public class Human {
 
@@ -27,6 +24,8 @@ public class Human {
 	static float magenta[] = { 1.0f, 0.0f, 1.0f, 1.0f };
 	static float cyan[] = { 0.0f, 1.0f, 1.0f, 1.0f };
 
+	static float joint_color[] = {11f/255,151f/255,217f/255,1f};
+
 	// other colours
 	static float orange[] = { 1.0f, 0.5f, 0.0f, 1.0f, 1.0f };
 	static float brown[] = { 0.5f, 0.25f, 0.0f, 1.0f, 1.0f };
@@ -38,29 +37,44 @@ public class Human {
 	public Texture upperbody_texture;
 	public Texture lowerbody_texture;
 	public Texture joint_texture;
+	// I use this texture sphere to draw texture
+	TexSphere myTexture;
+	Sphere sphere;
+	Cylinder cylinder;
+
+	public boolean isPressed = false;
+	public boolean beginPress = false;
+	public boolean isTouched = false;
+	// TODO set left arm angle limit
+	public float leftArmAngle = 30;
+	public float leftArmAngleLimit = 70;
+	public float leftArmPutAngleLimit = 110;
+	public float leftArmPutAngle = 0;
+	public float leftArmPressAngleLimit = 25;
+	public float leftArmPressAngle = 0;
 
 	public Human() {
-
+		myTexture = new TexSphere();
+		sphere = new Sphere();
+		cylinder = new Cylinder();
 	}
 
 	// Implement using notes in Animation lecture
-	public void DrawHuman(float delta, boolean GoodAnimation) {
-		float theta = (float) (delta * 2 * Math.PI);
+	public void DrawHuman(float speed, boolean isLauncher) {
+		float theta = (float) (speed * 2 * Math.PI);
 		float LimbRotation;
 		float raftRotate;
-		if (GoodAnimation) {
+		if (isLauncher) {
 			LimbRotation = (float) Math.cos(theta) * 45;
 			// the speed of raft rotate can be set here
-			raftRotate = (delta * 2000) % 360;
+			raftRotate = (speed * 2000) % 360;
 		} else {
 			LimbRotation = 0f;
 			raftRotate = 0f;
 		}
 
-		Sphere sphere = new Sphere();
-		Cylinder cylinder = new Cylinder();
-		// I use this texture sphere to draw texture
-		TexSphere myTexture = new TexSphere();
+
+
 		GL11.glPushMatrix();
 		{
 			// lower body
@@ -112,8 +126,8 @@ public class Human {
 				{
 					GL11.glTranslatef(0.0f, 0.0f, 0.0f);
 					GL11.glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-					GL11.glColor3f(blue[0], blue[1], blue[2]);
-					GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
+					GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+					GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
 					cylinder.DrawCylinder(0.15f, 0.7f, 32);
 
 					// head
@@ -173,101 +187,66 @@ public class Human {
 					GL11.glTranslatef(0.5f, 0.4f, 0.0f);
 					myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
 
-					// left arm with blue color
-					GL11.glColor3f(blue[0], blue[1], blue[2]);
-					GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
+					// left arm with joint_color color
+					GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+					GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
 					GL11.glPushMatrix();
 					{
 						GL11.glTranslatef(0.0f, 0.0f, 0.0f);
 						GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-
-						GL11.glRotatef(LimbRotation, 1.0f, 0.0f, 0.0f);
-						cylinder.DrawCylinder(0.15f, 0.7f, 32);
-
-						// left elbow with joint texture
-						GL11.glPushMatrix();
-						{
-							GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-							myTexture.DrawTexSphere(0.2f, 32, 32, joint_texture);
-
-							// left forearm with blue color
-							GL11.glColor3f(blue[0], blue[1], blue[2]);
-							GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
-							GL11.glPushMatrix();
-							{
-								GL11.glTranslatef(0.0f, 0.0f, 0.0f);
-								GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-								cylinder.DrawCylinder(0.1f, 0.7f, 32);
-
-								// left hand with white color
-								GL11.glColor3f(white[0], white[1], white[2]);
-								GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(white));
-								GL11.glPushMatrix();
-								{
-									GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-									sphere.DrawSphere(0.2f, 32, 32);
-
-								}
-								GL11.glPopMatrix();
+						// TODO:rotate left arm
+						if(beginPress){
+							float armSpeed = speed * 40;
+							leftArmAngle += armSpeed;
+							if(leftArmAngle > leftArmAngleLimit) {
+								leftArmAngle = leftArmAngleLimit;
 							}
-							GL11.glPopMatrix();
+							leftArmPutAngle += armSpeed;
+							if(leftArmPutAngle > leftArmPutAngleLimit) {
+								leftArmPutAngle = leftArmPutAngleLimit;
+
+							}
+							leftArmPressAngle += armSpeed;
+							if(leftArmPressAngle > 10){
+								isTouched = true;
+							}
+							if(leftArmPressAngle > leftArmPressAngleLimit) leftArmPressAngle = leftArmPressAngleLimit;
 						}
-						GL11.glPopMatrix();
+						if(leftArmPressAngle == leftArmPressAngleLimit && leftArmPutAngle == leftArmPutAngleLimit && leftArmAngle == leftArmAngleLimit){
+							isPressed = true;
+						}
+						GL11.glRotatef(leftArmAngle, 0f, 1.0f, 0.0f);
+						GL11.glRotatef(leftArmPutAngle,1,0,0f);
+						GL11.glRotatef(-leftArmPressAngle, 0f, 1f, 0f);
+						cylinder.DrawCylinder(0.15f, 0.7f, 32);
+						normalArm();
 					}
 					GL11.glPopMatrix();
 				}
 				GL11.glPopMatrix();
 				// to chest
-				// right shoulder with blue color
+				// right shoulder with joint_color color
 				GL11.glPushMatrix();
 				{
-					GL11.glColor3f(blue[0], blue[1], blue[2]);
-					GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
+					GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+					GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
 					GL11.glPushMatrix();
 					{
 						GL11.glTranslatef(-0.5f, 0.4f, 0.0f);
 						myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
-
-						// right arm with blue color
-						GL11.glColor3f(blue[0], blue[1], blue[2]);
-						GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
+						// right arm with joint_color color
+						GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+						GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
 						GL11.glPushMatrix();
 						{
 							GL11.glTranslatef(0.0f, 0.0f, 0.0f);
 							GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-
-							GL11.glRotatef(-LimbRotation, 1.0f, 0.0f, 0.0f);
+							// TODO:rotate arm
+							GL11.glRotatef(-30, 0, 1f, 0.0f);
 							cylinder.DrawCylinder(0.15f, 0.7f, 32);
 
 							// right elbow with joint texture
-							GL11.glPushMatrix();
-							{
-								GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-								myTexture.DrawTexSphere(0.2f, 32, 32, joint_texture);
-
-								// right forearm
-								GL11.glColor3f(blue[0], blue[1], blue[2]);
-								GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
-								GL11.glPushMatrix();
-								{
-									GL11.glTranslatef(0.0f, 0.0f, 0.0f);
-									GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
-									cylinder.DrawCylinder(0.1f, 0.7f, 32);
-
-									// right hand with white color
-									GL11.glColor3f(white[0], white[1], white[2]);
-									GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE,
-											Utils.ConvertForGL(white));
-									GL11.glPushMatrix();
-									{
-										GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-										sphere.DrawSphere(0.2f, 32, 32);
-									}
-									GL11.glPopMatrix();
-								}
-								GL11.glPopMatrix();
-							}
-							GL11.glPopMatrix();
+							normalArm();
 						}
 						GL11.glPopMatrix();
 					}
@@ -287,55 +266,17 @@ public class Human {
 
 				myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
 
-				// left high leg withe blue color
-				GL11.glColor3f(blue[0], blue[1], blue[2]);
-				GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
+				// left high leg withe joint_color color
+				GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+				GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
 				GL11.glPushMatrix();
 				{
 					GL11.glTranslatef(0.0f, 0.0f, 0.0f);
-					GL11.glRotatef(0.0f, 0.0f, 0.0f, 0.0f);
+					GL11.glRotatef(30, 0.0f, 1.0f, 0.0f);
 
-					GL11.glRotatef((LimbRotation) + 90, 1.0f, 0.0f, 0.0f);
+					GL11.glRotatef(90, 1.0f, 0.0f, 0.0f);
 					cylinder.DrawCylinder(0.15f, 0.7f, 32);
-
-					// left knee with joint texture
-					GL11.glPushMatrix();
-					{
-						GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-						GL11.glRotatef(0.0f, 0.0f, 0.0f, 0.0f);
-						myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
-
-						// left low leg with blue color
-						GL11.glColor3f(blue[0], blue[1], blue[2]);
-						GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
-						GL11.glPushMatrix();
-						{
-							// rotate left leg
-							GL11.glTranslatef(0.0f, 0.0f, 0.0f);
-							// when the leg rotate to the front, the low leg will rotate back a little
-							if (LimbRotation > 0) {
-								GL11.glRotatef((-LimbRotation / 2), 0.0f, 0.0f, 0.0f);
-							}
-							// when the leg rotate to the back, the low leg will rotate a little bit more
-							if (LimbRotation < 0) {
-								GL11.glRotatef((LimbRotation / 4), 0.0f, 0.0f, 0.0f);
-							}
-							cylinder.DrawCylinder(0.15f, 0.7f, 32);
-
-							// left foot with white color
-							GL11.glColor3f(white[0], white[1], white[2]);
-							GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(white));
-							GL11.glPushMatrix();
-							{
-								GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-								sphere.DrawSphere(0.3f, 32, 32);
-
-							}
-							GL11.glPopMatrix();
-						}
-						GL11.glPopMatrix();
-					}
-					GL11.glPopMatrix();
+					keenAndLeg();
 				}
 				GL11.glPopMatrix();
 			}
@@ -350,54 +291,17 @@ public class Human {
 
 				myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
 
-				// right high leg with blue color
-				GL11.glColor3f(blue[0], blue[1], blue[2]);
-				GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
+				// right high leg with joint_color color
+				GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+				GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
 				GL11.glPushMatrix();
 				{
 					GL11.glTranslatef(0.0f, 0.0f, 0.0f);
 					GL11.glRotatef(0.0f, 0.0f, 0.0f, 0.0f);
 
-					GL11.glRotatef((-LimbRotation) + 90, 1.0f, 0.0f, 0.0f);
+					GL11.glRotatef( + 90, 1.0f, 0.0f, 0.0f);
 					cylinder.DrawCylinder(0.15f, 0.7f, 32);
-
-					// right knee with joint texture
-					GL11.glPushMatrix();
-					{
-						GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-						GL11.glRotatef(0.0f, 0.0f, 0.0f, 0.0f);
-						myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
-
-						// right low leg with blue color
-						GL11.glColor3f(blue[0], blue[1], blue[2]);
-						GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(blue));
-						GL11.glPushMatrix();
-						{
-							// rotate right leg
-							GL11.glTranslatef(0.0f, 0.0f, 0.0f);
-							// when the leg rotate to the front, the low leg will rotate back a little
-							if (LimbRotation < 0) {
-								GL11.glRotatef((LimbRotation / 2), 0.0f, 0.0f, 0.0f);
-							}
-							// when the leg rotate to the back, the low leg will rotate a little bit more
-							if (LimbRotation > 0) {
-								GL11.glRotatef((-LimbRotation / 4), 0.0f, 0.0f, 0.0f);
-							}
-							cylinder.DrawCylinder(0.15f, 0.7f, 32);
-
-							// right foot using white color
-							GL11.glColor3f(white[0], white[1], white[2]);
-							GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(white));
-							GL11.glPushMatrix();
-							{
-								GL11.glTranslatef(0.0f, 0.0f, 0.75f);
-								sphere.DrawSphere(0.3f, 32, 32);
-							}
-							GL11.glPopMatrix();
-						}
-						GL11.glPopMatrix();
-					}
-					GL11.glPopMatrix();
+					keenAndLeg();
 				}
 				GL11.glPopMatrix();
 			}
@@ -406,7 +310,66 @@ public class Human {
 		GL11.glPopMatrix();
 	}
 
+	private void keenAndLeg(){
+		// right knee with joint texture
+		GL11.glPushMatrix();
+		{
+			GL11.glTranslatef(0.0f, 0.0f, 0.75f);
+			GL11.glRotatef(0.0f, 0.0f, 0.0f, 0.0f);
+			myTexture.DrawTexSphere(0.25f, 32, 32, joint_texture);
+
+			// right low leg with joint_color color
+			GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+			GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
+			GL11.glPushMatrix();
+			{
+				// rotate right leg
+				GL11.glTranslatef(0.0f, 0.0f, 0.0f);
+				cylinder.DrawCylinder(0.15f, 0.7f, 32);
+
+				// right foot using white color
+				GL11.glColor3f(white[0], white[1], white[2]);
+				GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(white));
+				GL11.glPushMatrix();
+				{
+					GL11.glTranslatef(0.0f, 0.0f, 0.75f);
+					sphere.DrawSphere(0.3f, 32, 32);
+				}
+				GL11.glPopMatrix();
+			}
+			GL11.glPopMatrix();
+		}
+		GL11.glPopMatrix();
+	}
+
+	public void normalArm(){
+		GL11.glTranslatef(0.0f, 0.0f, 0.75f);
+		myTexture.DrawTexSphere(0.2f, 32, 32, joint_texture);
+
+		// right forearm
+		GL11.glColor3f(joint_color[0], joint_color[1], joint_color[2]);
+		GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(joint_color));
+		GL11.glPushMatrix();
+		{
+			GL11.glTranslatef(0.0f, 0.0f, 0.0f);
+//			GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+			cylinder.DrawCylinder(0.1f, 0.7f, 32);
+
+			// right hand with white color
+			GL11.glColor3f(white[0], white[1], white[2]);
+			GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE,
+					Utils.ConvertForGL(white));
+			GL11.glPushMatrix();
+			{
+				GL11.glTranslatef(0.0f, 0.0f, 0.75f);
+				sphere.DrawSphere(0.2f, 32, 32);
+			}
+			GL11.glPopMatrix();
+		}
+		GL11.glPopMatrix();
+	}
 }
+
 
 /*
  * 
