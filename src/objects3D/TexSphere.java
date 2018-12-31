@@ -49,7 +49,7 @@ public class TexSphere extends Sphere{
 				t = (float) (phi / (float) Math.PI) + 0.5f;
 				s = (float) (theta / Math.PI * 2.0f) + 0.5f;
 
-				// GL11.glTexCoord2f(s,t); // should be here but seems to be a bug in LWJGL
+//				 GL11.glTexCoord2f(s,t); // should be here but seems to be a bug in LWJGL
 				GL11.glNormal3f(x, y, z);
 				GL11.glVertex3f(x, y, z);
 

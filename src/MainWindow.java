@@ -1,6 +1,9 @@
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import GraphicsObjects.Point4f;
 import GraphicsObjects.Vector4f;
@@ -14,7 +17,6 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 
-import org.lwjgl.opengl.GL41;
 import org.lwjgl.util.glu.GLU;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.opengl.Texture;
@@ -26,16 +28,9 @@ import GraphicsObjects.Utils;
 
 public class MainWindow {
 
-	private boolean MouseOnepressed = true;
-	private boolean dragMode = false;
 	private boolean isLaunched = false;
-	private boolean beginPress = false;
-	private boolean isTouched = false;
-	private boolean Earth = false;
 	/** position of pointer */
 	float x = 400, y = 300;
-	/** angle of rotation */
-	float rotation = 0;
 	/** time at last frame */
 	long lastFrame;
 	/** frames per second */
@@ -44,51 +39,41 @@ public class MainWindow {
 	long lastFPS;
 
 	long myDelta = 0; // to use for animation
-	float Alpha = 0; // to use for animation
 	long StartTime; // beginAnimiation
 
 	Arcball MyArcball = new Arcball();
 
-	boolean DRAWGRID = false;
-	boolean waitForKeyrelease = true;
 	/** Mouse movement */
-	int LastMouseX = -1;
-	int LastMouseY = -1;
-
-	float pullX = 0.0f; // arc ball X cord.
-	float pullY = 0.0f; // arc ball Y cord.
-
-	//int OrthoNumber = 3000; // using this for screen size, making a window of 1200 x 800 so aspect ratio 3:2
-	int OrthoNumber = 1500;						// // do not change this for assignment 3 but you can change everything for your
-							// project
 
 	// basic colours
-	static float black[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	static float white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-	static float grey[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	static float spot[] = { 0.1f, 0.1f, 0.1f, 0.5f };
 
 	// primary colours
 	static float red[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-	static float green[] = { 0.0f, 1.0f, 0.0f, 1.0f };
-	static float blue[] = { 0.0f, 0.0f, 1.0f, 1.0f };
 
-	// secondary colours
-	static float yellow[] = { 1.0f, 1.0f, 0.0f, 1.0f };
-	static float magenta[] = { 1.0f, 0.0f, 1.0f, 1.0f };
-	static float cyan[] = { 0.0f, 1.0f, 1.0f, 1.0f };
-
-	// other colours
-	static float orange[] = { 1.0f, 0.5f, 0.0f, 1.0f, 1.0f };
-	static float brown[] = { 0.5f, 0.25f, 0.0f, 1.0f, 1.0f };
-	static float dkgreen[] = { 0.0f, 0.5f, 0.0f, 1.0f, 1.0f };
-	static float pink[] = { 1.0f, 0.6f, 0.6f, 1.0f, 1.0f };
-
-	// static GLfloat light_position[] = {0.0, 100.0, 100.0, 0.0};
-
-	// support method to aid in converting a java float array into a Floatbuffer
-	// which is faster for the opengl layer to process
+    float cameraAngle = 90f;
+    float cameraZ = -115f;
+    float cameraY = 160;
+    float directionZ = 100;
+    float humanPositionY = 0;
+    float racketRotate = 0;
+    Point4f cameraPosition = new Point4f(0, cameraY, cameraZ,1);
+    Point4f cameraDirection = new Point4f(0,cameraY,directionZ,1);
+    Point4f cameraUp = new Point4f(0, 1, 0,1);
+    Point4f humanPosition = new Point4f(0,humanPositionY,cameraZ+225,1);
+    float raftForce = 0f;
+    float raftSpeed = 0;
+    float raftRotate = 180;
+    float handRotate  = 0;
+    float humanRotation = 180;
+    int raftMaxSpeed = 3;
+    int sizeHuman = 30;
+    int humanSpeed = 5;
+    int maxSpeed = 30;
+	RobotCat myRobotCat;
+	FixedHuman npc;
+	NormalHuman daXiong;
+	Rocket rockets[];
+    List<Rectangle> collisions = new ArrayList<>();
 
 	public void start() {
 
@@ -105,6 +90,7 @@ public class MainWindow {
 		getDelta(); // call once before loop to initialise lastFrame
 		lastFPS = getTime(); // call before loop to initialise fps timer
 
+        initObject();
 		while (!Display.isCloseRequested()) {
 			int delta = getDelta();
 			update(delta);
@@ -116,118 +102,195 @@ public class MainWindow {
 		Display.destroy();
 	}
 
+    private void initObject() {
+	    myRobotCat = new RobotCat();
+	    npc = new FixedHuman();
+        daXiong = new NormalHuman();
+        rockets = new Rocket[]{new RocketA(),new RocketB(),new RocketC()};
+        int width = rocketSize * 8;
+        int height = rocketSize * 5;
+        Rectangle npc1 = new Rectangle(-width / 2,museumSize-2*height/3,width,height);
+        Rectangle npc2 = new Rectangle(museumSize-2*height/3,-width/2,height,width);
+        Rectangle npc3 = new Rectangle(-museumSize-height/3,-width/2,height,width);
+        myRobotCat.head_texture = head_texture;
+        myRobotCat.upperbody_texture = upperbody_texture;
+        myRobotCat.lowerbody_texture = lowerbody_texture;
+//        myRobotCat.joint_texture = joint_texture;
+        npc.head_texture = head_texture;
+        npc.upperbody_texture = upperbody_texture;
+        npc.lowerbody_texture = lowerbody_texture;
+//        npc.joint_texture = joint_texture;
+        daXiong.head_texture = head_texture;
+        daXiong.upperbody_texture = upperbody_texture;
+        daXiong.lowerbody_texture = lowerbody_texture;
+        rockets[0].bodys = new Texture[]{wall,background_sky,child,background_sky};
+        rockets[1].bodys = new Texture[]{joint_texture,background_sky,child,background_sky};
+        rockets[2].bodys = new Texture[]{background_sky,joint_texture,joint_texture,joint_texture};
+//        daXiong.joint_texture = joint_texture;
+//	    collisions.add(myRobotCat);
+//	    collisions.add(npc);
+//	    collisions.add(daXiong);
+        collisions.add(npc1);
+        collisions.add(npc2);
+        collisions.add(npc3);
+    }
+
+    public void drawRectangle(Rectangle r){
+	    GL11.glColor3f(red[0],red[1],red[2]);
+        GL11.glBegin(GL11.GL_QUADS);
+        Point4f points[] = {new Point4f(r.x,0,r.y,0),new Point4f(r.x+r.width,0,r.y,0),
+                new Point4f(r.x+r.width,0,r.y+r.height,0), new Point4f(r.x,0,r.y+r.height,0)};
+        Vector4f v = points[1].MinusPoint(points[0]);
+        Vector4f w = points[3].MinusPoint(points[0]);
+        Vector4f normal = v.cross(w).Normal();
+        GL11.glNormal3f(normal.x, normal.y, normal.z);
+
+        GL11.glVertex3f(points[0].x,points[0].y,points[0].z);
+        GL11.glVertex3f(points[1].x,points[1].y,points[1].z);
+        GL11.glVertex3f(points[2].x,points[2].y,points[2].z);
+        GL11.glVertex3f(points[3].x,points[3].y,points[3].z);
+        GL11.glEnd();
+    }
+
 	public void update(int delta) {
-		// rotate quad
-		// rotation += 0.01f * delta;
+        // TODO key listener
+        float rotateAngle = 1.0f;
+        raftRotate++;
+        handRotate++;
+        racketRotate++;
+        npc.rotateAngle = handRotate;
+        daXiong.rotateAngle = handRotate;
+        Point currentHumanPosition = new Point(Math.round(humanPosition.x), Math.round(humanPosition.z));
+        if (Keyboard.isKeyDown(Keyboard.KEY_A)){
+            if(!checkCollision(currentHumanPosition)){
+                cameraAngle-=rotateAngle;
+                humanRotation+=rotateAngle;
+            }
+        }
+        if (Keyboard.isKeyDown(Keyboard.KEY_D)){
+            if(!checkCollision(currentHumanPosition)) {
+                cameraAngle += rotateAngle;
+                humanRotation -= rotateAngle;
+            }
+        }
+        if (Keyboard.isKeyDown(Keyboard.KEY_J)){
+            humanSpeed+=1;
+            if(humanSpeed > maxSpeed) humanSpeed = maxSpeed;
+            System.out.println("humanSpeed "+humanSpeed);
+        }
+        if (Keyboard.isKeyDown(Keyboard.KEY_K)){
+            humanSpeed-=1;
+            if(humanSpeed < 5) humanSpeed = 5;
+            System.out.println("humanSpeed "+humanSpeed);
+        }
+        float rad =(float) Math.PI*cameraAngle/180.0f;
 
-		int MouseX = Mouse.getX();
-		int MouseY = Mouse.getY();
-		int WheelPosition = Mouse.getDWheel();
+        Point currentHumanPositionFront = new Point(Math.round(humanPosition.x+sizeHuman*(float) Math.cos(rad)),
+                Math.round(humanPosition.z+sizeHuman*(float) Math.sin(rad)));
+        Point currentHumanPositionBack = new Point(Math.round(humanPosition.x-sizeHuman*(float) Math.cos(rad)),
+                Math.round(humanPosition.z-sizeHuman*(float) Math.sin(rad)));
+        if(Keyboard.isKeyDown(Keyboard.KEY_W)){
+            if(!checkCollision(currentHumanPositionFront)){
+                cameraPosition.z+=(float)Math.sin(rad) * humanSpeed;
+                cameraPosition.x+=(float)Math.cos(rad) * humanSpeed;
+            }
+        }
+        if(Keyboard.isKeyDown(Keyboard.KEY_S)){
+            if(!checkCollision(currentHumanPositionBack)) {
+                cameraPosition.z -= (float) Math.sin(rad) * humanSpeed;
+                cameraPosition.x -= (float) Math.cos(rad) * humanSpeed;
+            }
+        }
+        if(Keyboard.isKeyDown(Keyboard.KEY_R)){
+            cameraPosition.z = cameraZ;
+            cameraPosition.x = 0;
+            cameraPosition.y = cameraY;
+        }
+        if(Keyboard.isKeyDown(Keyboard.KEY_R)){
+            cameraPosition.z = cameraZ;
+            cameraPosition.x = 0;
+            cameraPosition.y = cameraY;
+        }
+        if (Keyboard.isKeyDown(Keyboard.KEY_Q)){
+            raftForce += 0.05;
+            if(raftForce > raftMaxSpeed) raftForce = raftMaxSpeed;
+            System.out.println("raftForce "+raftForce);
+        }
+        if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
+            raftForce -= 0.05;
+            if(raftForce < 0) raftForce = 0;
+        }
+        float deltaTime = delta * 0.02f;
+        if(raftForce > 1){
 
-		boolean MouseButtonPressed = Mouse.isButtonDown(0);
-
-		if (MouseButtonPressed && !MouseOnepressed) {
-			MouseOnepressed = true;
-			// Debug print
-			// System.out.println("Mouse drag mode");
-			MyArcball.startBall(MouseX, MouseY, 1200, 800);
-			dragMode = true;
-
-		} else if (!MouseButtonPressed) {
-			// Debug print
-			// System.out.println("Mouse drag mode end ");
-			MouseOnepressed = false;
-			dragMode = false;
-		}
-
-		if (dragMode) {
-		    // TODO close the arc ball
-			MyArcball.updateBall(MouseX, MouseY, 1200, 800);
-		}
-
-		if (WheelPosition > 0) {
-			OrthoNumber += 10;
-		}
-
-		if (WheelPosition < 0) {
-			OrthoNumber -= 10;
-			if (OrthoNumber < 610) {
-				OrthoNumber = 610;
-			}
-
-
-		}
-
-		/** rest key is R */
-		if (Keyboard.isKeyDown(Keyboard.KEY_R))
-			MyArcball.reset();
-
-		/* bad animation can be turn on or off using A key) */
-
-		if (Keyboard.isKeyDown(Keyboard.KEY_A)){
-			isLaunched = !isLaunched;
-			// TODO modify time
-			StartTime = getTime();
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_B)){
-			beginPress = !beginPress;
-			// TODO modify time
-			StartTime = getTime();
-		}
-		if (Keyboard.isKeyDown(Keyboard.KEY_D))
-			x += 0.35f * delta;
-
-		if (Keyboard.isKeyDown(Keyboard.KEY_W))
-			y += 0.35f * delta;
-		if (Keyboard.isKeyDown(Keyboard.KEY_S))
-			y -= 0.35f * delta;
-
-		if (Keyboard.isKeyDown(Keyboard.KEY_Q))
-			rotation += 0.35f * delta;
-		if (Keyboard.isKeyDown(Keyboard.KEY_E)) {
-			Earth = !Earth;
-		}
-
-		if (waitForKeyrelease) // check done to see if key is released
-		{
-			if (Keyboard.isKeyDown(Keyboard.KEY_G)) {
-
-				DRAWGRID = !DRAWGRID;
-				Keyboard.next();
-				if (Keyboard.isKeyDown(Keyboard.KEY_G)) {
-					waitForKeyrelease = true;
-				} else {
-					waitForKeyrelease = false;
-
-				}
-			}
-		}
-
-		/** to check if key is released */
-		if (!Keyboard.isKeyDown(Keyboard.KEY_G)) {
-			waitForKeyrelease = true;
-		} else {
-			waitForKeyrelease = false;
-
-		}
-
-		// keep quad on the screen
-		if (x < 0)
-			x = 0;
-		if (x > 1200)
-			x = 1200;
-		if (y < 0)
-			y = 0;
-		if (y > 800)
-			y = 800;
-
+            if(raftSpeed > 5){
+                raftSpeed = raftSpeed + (raftForce-1) * deltaTime * 0.05f;
+            }else{
+                raftSpeed += (raftForce-1) * deltaTime * 0.1;
+            }
+            cameraPosition.y += raftSpeed * deltaTime;
+            humanPosition.y += raftSpeed * deltaTime;
+        }else if(raftForce < 1 && humanPosition.y > 0){
+            raftSpeed -= (1-raftForce) * deltaTime * 0.4f;
+            cameraPosition.y += raftSpeed * deltaTime;
+            humanPosition.y += raftSpeed * deltaTime;
+        }
+        if(humanPosition.y < 0){
+            raftSpeed = 0;
+            raftForce = 0f;
+            humanPosition.y = 0;
+            cameraPosition.y = cameraY;
+        }
+        float r = -cameraZ;
+        checkBound();
+        cameraDirection.x = (float)Math.cos(rad) * r + cameraPosition.x;
+        cameraDirection.z = (float)Math.sin(rad) * r + cameraPosition.z;
+        humanPosition.x = (float)Math.cos(rad)*r+cameraPosition.x;
+        humanPosition.z = (float)Math.sin(rad)*r+cameraPosition.z;
+        humanPosition.y = cameraPosition.y - cameraY;
+        cameraDirection.y = cameraPosition.y;
 		updateFPS(); // update FPS Counter
-
-		LastMouseX = MouseX;
-		LastMouseY = MouseY;
 	}
 
-	/**
+    private boolean checkCollision(Point position) {
+        for (Rectangle r: collisions) {
+            if(r.contains(position)) return true;
+        }
+        return false;
+    }
+
+    private void checkBound() {
+	    if(cameraPosition.y > museumSize*2 - sizeHuman){
+            cameraPosition.y = museumSize*2 - sizeHuman - 10;
+            raftForce = 0f;
+            raftSpeed = 0;
+        }
+        if(cameraPosition.y < 0){
+            cameraPosition.y = 0;
+        }
+        if(cameraPosition.z > museumSize - sizeHuman * 4){
+            cameraPosition.z = museumSize - sizeHuman * 4;
+            raftForce = 0f;
+            raftSpeed = 0;
+        }
+        if(cameraPosition.z < -museumSize + sizeHuman * 4){
+            cameraPosition.z = -museumSize + sizeHuman * 4;
+            raftForce = 0f;
+            raftSpeed = 0;
+        }
+        if(cameraPosition.x > museumSize - sizeHuman * 4){
+            cameraPosition.x = museumSize - sizeHuman * 4;
+            raftForce = 0f;
+            raftSpeed = 0;
+        }
+        if(cameraPosition.x < -museumSize + sizeHuman * 4){
+            cameraPosition.x = -museumSize + sizeHuman * 4;
+            raftForce = 0f;
+            raftSpeed = 0;
+        }
+    }
+
+    /**
 	 * Calculate how many milliseconds have passed since last frame.
 	 *
 	 * @return milliseconds passed since last frame
@@ -260,57 +323,110 @@ public class MainWindow {
 		}
 		fps++;
 	}
-
+	float lightIntensity = 0.1f;
+    public void drawTestShere(Point4f position){
+	    GL11.glPushMatrix();
+        Sphere sphere = new Sphere();
+        GL11.glTranslatef(position.x,position.y,position.z);
+//        GL11.glTranslatef(0,300,0);
+//        GL11.glColor3f(white[0],white[1],white[2]);
+//        GL11.glMaterial(GL11.GL_FRONT, GL11.GL_DIFFUSE, Utils.ConvertForGL(white));
+        GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+        GL11.glMaterial(GL11.GL_FRONT, GL11.GL_DIFFUSE, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+        GL11.glMaterial(GL11.GL_FRONT, GL11.GL_SPECULAR, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+//        GL11.glMaterial(GL11.GL_FRONT, GL11.GL_EMISSION, Utils.ConvertForGL(new float[]{lightIntensity,lightIntensity,lightIntensity,1}));
+        GL11.glMaterialf(GL11.GL_FRONT, GL11.GL_SHININESS, 0f);
+        sphere.DrawSphere(10f,16,16);
+//        GL11.glRotatef(90,0,0,1);
+        GL11.glPopMatrix();
+    }
 	public void initGL() {
 		changeOrtho();
-		MyArcball.startBall(0, 0, 1200, 800);
+//		MyArcball.startBall(0, 0, 1200, 800);
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
 		FloatBuffer lightPos = BufferUtils.createFloatBuffer(4);
-		lightPos.put(0f).put(1000f).put(1000).put(0).flip();
-
-		FloatBuffer lightPos2 = BufferUtils.createFloatBuffer(4);
-		lightPos2.put(0f).put(1000f).put(0).put(-1000f).flip();
-
+		lightPos.put(0f).put(-1000).put(0).put(1).flip();
+		FloatBuffer lightPos1 = BufferUtils.createFloatBuffer(4);
+		lightPos1.put(1000).put(0).put(0).put(1).flip();
+        FloatBuffer lightPos2 = BufferUtils.createFloatBuffer(4);
+        lightPos2.put(-1000).put(0).put(0).put(1).flip();
 		FloatBuffer lightPos3 = BufferUtils.createFloatBuffer(4);
-		lightPos3.put(-10000f).put(1000f).put(1000).put(0).flip();
+		lightPos3.put(0).put(1000f).put(0).put(1).flip();
 
 		FloatBuffer lightPos4 = BufferUtils.createFloatBuffer(4);
 		lightPos4.put(1000f).put(1000f).put(1000f).put(0).flip();
-		// TODO:test lighting
+		// TODO test lighting
 //		FloatBuffer lightPos5 = BufferUtils.createFloatBuffer(4);
 //		lightPos.put(0f).put(0f).put(0f).put(1000f).flip();
 //		GL11.glEnable(GL11.GL_LIGHT4);
 //		GL11.glLight(GL11.GL_LIGHT4, GL11.GL_POSITION,lightPos5);
 
-		GL11.glLight(GL11.GL_LIGHT0, GL11.GL_DIFFUSE, lightPos); // specify the
-																	// position
-																	// of the
-																	// light
-		//GL11.glEnable(GL11.GL_LIGHT0); // switch light #0 on // I've setup specific
-		// materials so in real light it will look abit strange
 
-		GL11.glLight(GL11.GL_LIGHT1, GL11.GL_POSITION, lightPos); // specify the
+//        GL11.glColor3f(white[0],white[1],white[2]);
+//        GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(white));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_POSITION, lightPos); // specify the
 																	// position
 																	// of the
 																	// light
-		GL11.glEnable(GL11.GL_LIGHT1); // switch light #0 on
-		GL11.glLight(GL11.GL_LIGHT1, GL11.GL_DIFFUSE, Utils.ConvertForGL(spot));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_AMBIENT, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_DIFFUSE, Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT0, GL11.GL_SPECULAR , Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+		// materials so in real light it will look a bit strange
+//        GL11.glEnable(GL11.GL_LIGHT0); // switch light #0 on // I've setup specific
 
-		GL11.glLight(GL11.GL_LIGHT2, GL11.GL_POSITION, lightPos3); // specify
-																	// the
+		GL11.glLight(GL11.GL_LIGHT1, GL11.GL_POSITION, lightPos1); // specify the
 																	// position
 																	// of the
 																	// light
-		GL11.glEnable(GL11.GL_LIGHT2); // switch light #0 on
-		GL11.glLight(GL11.GL_LIGHT2, GL11.GL_DIFFUSE, Utils.ConvertForGL(grey));
+        // position
+        // of the
+        // light
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_AMBIENT, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_DIFFUSE, Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT1, GL11.GL_SPECULAR , Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        // materials so in real light it will look a bit strange
+        GL11.glEnable(GL11.GL_LIGHT1); // switch light #0 on // I've setup specific
+
+        GL11.glLight(GL11.GL_LIGHT2, GL11.GL_POSITION, lightPos2); // specify the
+        // position
+        // of the
+        // light
+        // position
+        // of the
+        // light
+        GL11.glLight(GL11.GL_LIGHT2, GL11.GL_AMBIENT, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT2, GL11.GL_DIFFUSE, Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT2, GL11.GL_SPECULAR , Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        // materials so in real light it will look a bit strange
+        GL11.glEnable(GL11.GL_LIGHT2); // switch light #0 on // I've setup specific
+
+        GL11.glLight(GL11.GL_LIGHT3, GL11.GL_POSITION, lightPos3); // specify the
+        // position
+        // of the
+        // light
+        // position
+        // of the
+        // light
+        GL11.glLight(GL11.GL_LIGHT3, GL11.GL_AMBIENT, Utils.ConvertForGL(new float[]{0.0f,0.0f,0.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT3, GL11.GL_DIFFUSE, Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        GL11.glLight(GL11.GL_LIGHT3, GL11.GL_SPECULAR , Utils.ConvertForGL(new float[]{1.0f,1.0f,1.0f,1}));
+        // materials so in real light it will look a bit strange
+        GL11.glEnable(GL11.GL_LIGHT3); // switch light #0 on // I've setup specific
 //
-		GL11.glLight(GL11.GL_LIGHT3, GL11.GL_POSITION, lightPos4); // specify
-//																	// the
-//																	// position
-//																	// of the
-//																	// light
-		GL11.glEnable(GL11.GL_LIGHT3); // switch light #0 on
-		GL11.glLight(GL11.GL_LIGHT3, GL11.GL_DIFFUSE, Utils.ConvertForGL(grey));
+//		GL11.glLight(GL11.GL_LIGHT2, GL11.GL_POSITION, lightPosBack); // specify
+//		GL11.glEnable(GL11.GL_LIGHT2); // switch light #0 on
+//		GL11.glLight(GL11.GL_LIGHT2, GL11.GL_DIFFUSE, Utils.ConvertForGL(grey));
+//
+//		GL11.glLight(GL11.GL_LIGHT3, GL11.GL_POSITION, lightPos4); // specify
+////																	// the
+////																	// position
+////																	// of the
+////																	// light
+////		GL11.glEnable(GL11.GL_LIGHT3); // switch light #0 on
+//		GL11.glLight(GL11.GL_LIGHT3, GL11.GL_DIFFUSE, Utils.ConvertForGL(grey));
+
+
+
 		GL11.glEnable(GL11.GL_LIGHTING); // switch lighting on
 		GL11.glEnable(GL11.GL_DEPTH_TEST); // make sure depth buffer is switched
 											// on
@@ -326,61 +442,11 @@ public class MainWindow {
 		} // load in texture
 
 	}
-	public void changeOrthoTemp() {
-
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-		GL11.glOrtho(1200 - OrthoNumber - 100, OrthoNumber, (800 - (OrthoNumber * 0.66f)) - 200, (OrthoNumber * 0.66f) + 200, 100000,
-				-100000);
-		loadMatrix();
-	}
-	public void changeOrtho(float speed) {
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-		GL11.glOrtho(1200 - OrthoNumber - 1000, OrthoNumber, (800 - (OrthoNumber * 0.66f)) + 700 + speed, (OrthoNumber * 0.66f)+ 1100 + speed, 100000,
-				-100000);
-		loadMatrix();
-	}
-	public void changeOrthoToRocket(float speed){
-		GL11.glMatrixMode(GL11.GL_PROJECTION);
-		GL11.glLoadIdentity();
-		float expendSpeed = speed * 300;
-		float scaleSpeed = speed * 10;
-		if(expendSpeed > 900) expendSpeed = 900;
-		OrthoNumber += scaleSpeed;
-		if(OrthoNumber > 3000) OrthoNumber = 3000;
-		GL11.glOrtho(1200 - OrthoNumber-expendSpeed - 100, OrthoNumber, (800 - (OrthoNumber * 0.66f))+ expendSpeed -200, (OrthoNumber * 0.66f)+200+expendSpeed, 100000,
-				-100000);
-		loadMatrix();
-	}
-
-	public void loadMatrix(){
-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-		FloatBuffer CurrentMatrix = BufferUtils.createFloatBuffer(16);
-		GL11.glGetFloat(GL11.GL_MODELVIEW_MATRIX, CurrentMatrix);
-		MyArcball.getMatrix(CurrentMatrix);
-
-		GL11.glLoadMatrix(CurrentMatrix);
-	}
 	public void changeOrtho(){
 		GL11.glMatrixMode(GL11.GL_PROJECTION);
 		GL11.glLoadIdentity();
-		loadMatrix();
-	}
 
-	public void test(){
-		// TODO test the code
-		GL11.glBegin(GL11.GL_LINES);
-		GL11.glColor3f(red[0], red[1], red[2]);
-		GL11.glVertex3f(0, 0, 0);
-		GL11.glVertex3f(500, 0, 0);
-		GL11.glColor3f(cyan[0], cyan[1], cyan[2]);
-		GL11.glVertex3f(0, 0, 0);
-		GL11.glVertex3f(0, 500, 0);
-		GL11.glColor3f(green[0], green[1], green[2]);
-		GL11.glVertex3f(0, 0, 0);
-		GL11.glVertex3f(0, 0, 500);
-		GL11.glEnd();
+		//loadMatrix();
 	}
 
     public void drawQuadsWithTexture(Texture texture, Point4f[] points){
@@ -414,194 +480,93 @@ public class MainWindow {
 		myDelta = getTime() - StartTime;
 		// delta increase by 0.1/second
 		float delta = ((float) myDelta) / 10000;
-		startLauncher(delta);
+		//startLauncher(delta);
+        // TODO test lootAt
+        lookAtScene();
 	}
 
-	private void startLauncher(float delta) {
-
-		float beginTime = 0.5f;
-
-		// TODO:change ortho
-		if(delta > beginTime){
-			beginPress = true;
-			delta = delta - beginTime;
-		}
-
-		if(delta > 1.85){
-            float temp = 1.85f - 0.3477f;
-            changeOrtho(temp * temp * 1000);
-
-            GL11.glRotatef(-5, 1, 0, 0);
-
-            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-            GL11.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-            GL11.glColor3f(0.5f, 0.5f, 1.0f);
-
-            drawHuman(temp + 0.3477f);
-            drawRocket(temp * 4);
-            drawBackground();
-            drawController();
-            drawGround();
-		    return;
+	int npcBack = 100;
+	int rocketSize = 100;
+    private void lookAtScene() {
+	    changeOrtho();
+        GLU.gluPerspective(60f,1,0.1f,-1);
+        GLU.gluLookAt( cameraPosition.x, cameraPosition.y,cameraPosition.z,cameraDirection.x, cameraDirection.y,
+                cameraDirection.z, cameraUp.x,cameraUp.y,cameraUp.z );
+        GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+        GL11.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        GL11.glColor3f(0.5f, 0.5f, 1.0f);
+//        test(humanPosition);
+//        drawTestShere(cameraPosition);
+        drawTestShere(new Point4f(0,300,0,0));
+        drawTestShere(new Point4f(300,0,0,0));
+        drawTestShere(new Point4f(-300,0,0,0));
+//        drawTestShere(new Point4f(0,0,300,0));
+//        drawTestShere(new Point4f(0,0,-300,0));
+        raftRotate = raftForce * 2 + raftRotate;
+	    drawHuman(myRobotCat,raftRotate, humanPosition, humanRotation);
+        drawHuman(npc,handRotate, new Point4f(museumSize - npcBack,0,npcBack*2,1), 90);
+        drawHuman(npc,handRotate, new Point4f(-museumSize + npcBack,0,-npcBack*2,1), -90);
+        drawHuman(daXiong,handRotate, new Point4f(npcBack,0,museumSize - npcBack,1), 0);
+        drawRocket(new Point(-rocketSize,museumSize-rocketSize), rocketSize,rockets[0],racketRotate);
+        drawRocket(new Point(museumSize-rocketSize,-rocketSize ), Math.round(rocketSize*1.2f),rockets[1],90);
+        drawRocket(new Point(-museumSize+rocketSize,rocketSize ), Math.round(rocketSize*1.5f),rockets[2],0);
+        for(Rectangle r : collisions){
+            drawRectangle(r);
         }
+//	    drawBackground(new Point4f(0,100,0,1));
+        // ground
+	    drawMuseum(new Point4f(0,0,0,1),ground_texture);
+	    // TODO sky box
+        drawMuseum(new Point4f(0,museumSize*2,0,1),sky);
+        GL11.glPushMatrix();
+        // TODO the front wall
+	    GL11.glRotatef(90,1,0,0);
+        drawMuseum(new Point4f(0,museumSize,-museumSize,1), wallFront);
+        drawMuseum(new Point4f(0,-museumSize,-museumSize,1), door);
+	    GL11.glPopMatrix();
+        GL11.glPushMatrix();
+        // TODO the side wall
+        GL11.glRotatef(90,0,0,1);
+        drawMuseum(new Point4f(museumSize,museumSize,0,1), wallSide);
+        drawMuseum(new Point4f(museumSize,-museumSize,0,1), wallSide);
+        GL11.glPopMatrix();
+    }
 
-		if(!isLaunched && !beginPress){
-			changeOrthoTemp();
-		}else if (!isLaunched && beginPress){
-			changeOrthoToRocket(delta*10);
-		}else{
-			float temp = delta - 0.3477f;
-			//delta = (delta * 10 - 4.5f) / 10;
-			changeOrtho(temp * temp * 1000);
-		}
-		//changeOrtho(delta*delta * 1000);
+    int museumSize = 1000;
+	public void drawMuseum(Point4f position, Texture texture){
+        GL11.glPushMatrix();
 
-		// change perspective
-		//if(isLaunched) OrthoNumber += delta*2;
-		// Rotate the perspective
-		//GL11.glRotatef(-5,1,0,0);
-		GL11.glRotatef(-5,1,0,0);
+        GL11.glTranslatef(position.x,position.y,position.z);
+        GL11.glScalef(museumSize,museumSize,museumSize);
+        // move back
+        Point4f ground_points[] = {new Point4f(-1,0,-1,1),new Point4f(1,0,-1,1),
+                new Point4f(1,0,1,1),new Point4f(-1,0,1,1)};
+        drawQuadsWithTexture(texture,ground_points);
+        GL11.glPopMatrix();
+    }
 
-		//GL11.glRotatef(180,0,0,1);
-		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-		GL11.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		GL11.glColor3f(0.5f, 0.5f, 1.0f);
-		drawEarth();
-
-		// TODO  look at
-//		GLU.gluPerspective(100,1.5f,1f,1000f);
-//		GLU.gluLookAt(0f,1000f,-1200f,0f,-1f,1f,0f,1f,1f);
-		// code to add in animation
-//        test();
-		// TODO rotate human
-		float temp = delta - 0.3477f;
-		drawHuman(delta);
-		drawRocket(temp*4);
-		drawBackground();
-		drawController();
-		drawGround();
-	}
-
-	private void drawController() {
+	public void drawRocket(Point position, int rocketSize, Rocket rocket, float rotation) {
 		GL11.glPushMatrix();
-		//here is my sign
-		Cube controller = new Cube();
-		Cylinder button = new Cylinder();
-		float size = 25;
-		GL11.glColor3f(cyan[0], cyan[1], cyan[2]);
-		GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(cyan));
-		GL11.glTranslatef(1000f,size / 2f, 0f);
-		//I write this function to test
-		///test();
-		GL11.glScalef(size, size, size);
-		// TODO sign texture
-
-		controller.DrawCube();
-		GL11.glTranslatef(0,1f,0);
-		controller.DrawCube();
-		GL11.glTranslatef(0,1f,0);
-		controller.DrawCube();
-		GL11.glTranslatef(0,1f,0);
-		GL11.glColor3f(red[0], red[1], red[2]);
-		GL11.glMaterial(GL11.GL_FRONT, GL11.GL_AMBIENT_AND_DIFFUSE, Utils.ConvertForGL(red));
-		GL11.glRotatef(-90,1,0,0);
-		if(isTouched || isLaunched){
-			GL11.glTranslatef(0,0f,-0.2f);
-		}
-		button.DrawCylinder(0.5f,0.5f,32);
-		GL11.glPopMatrix();
-	}
-
-	public void drawEarth() {
-		/*
-		 * This code puts the earth code in which is larger than the human so it appears
-		 * to change the scene
-		 */
-		if (Earth) {
-			// Globe in the centre of the scene
-			GL11.glPushMatrix();
-			TexSphere MyGlobe = new TexSphere();
-			GL11.glTranslatef(0, 0, 0);
-			GL11.glScalef(500f, 500f, 500f);
-			//GL11.glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			MyGlobe.DrawTexSphere(8f, 100, 100, texture);
-			GL11.glPopMatrix();
-		}
-	}
-
-	public void drawBackground() {
-		GL11.glPushMatrix();
-		float size = 5000;
-		GL11.glScalef(size,size,size);
-		GL11.glTranslatef(0,0,1);
-		Point4f background_points[] = {new Point4f(-1,0,0,0.5f), new Point4f(1,0,0,0.5f),
-				new Point4f(1,1,0,0.5f), new Point4f(-1, 1, 0 ,0.5f)};
-
-		// TODO:draw background
-		drawQuadsWithTexture(background_sky,background_points);
-		GL11.glPopMatrix();
-	}
-
-	public void drawGround(){
-		GL11.glPushMatrix();
-		float size = 5000;
-		GL11.glScalef(size,size,size);
-		// move back
-		Point4f ground_points[] = {new Point4f(-1,0,-1,1),new Point4f(1,0,-1,1),
-				new Point4f(1,0,1,1),new Point4f(-1,0,1,1)};
-		drawQuadsWithTexture(ground_texture,ground_points);
-		GL11.glPopMatrix();
-	}
-
-	public void drawRocket(float speed) {
-		GL11.glPushMatrix();
-		GL11.glScalef(200,200,200);
-		Rocket rocket = new Rocket();
+		GL11.glTranslatef(position.x,0,position.y);
+		GL11.glRotatef(rotation,0,1,0);
+		GL11.glScalef(rocketSize,rocketSize,rocketSize);
+//		rocket.body = background_sky;
 		// TODO:draw rocket
-		rocket.DrawRocket(speed, isLaunched);
+		rocket.DrawRocket(0, isLaunched);
 		GL11.glPopMatrix();
 	}
 
-	public void drawHuman(float speed) {
+	public void drawHuman(Human human, float speed, Point4f position, float angle) {
 		GL11.glPushMatrix();
-		Human MyHuman = new Human();
-		float sizeHuman = 40f;
-		//I add texture for human here
-		MyHuman.head_texture = head_texture;
-		MyHuman.upperbody_texture = upperbody_texture;
-		MyHuman.lowerbody_texture = lowerbody_texture;
-		MyHuman.joint_texture = joint_texture;
-
 		// TODO: the position of human
-		GL11.glTranslatef(1053, sizeHuman*1.5f, -10);
+		GL11.glTranslatef(position.x, position.y + sizeHuman * 1.4f, position.z);
 		GL11.glScalef(sizeHuman, sizeHuman, sizeHuman);
-
-		if (isLaunched) {
-
-			// TODO  human animation
-            float temp = speed - 0.3477f;
-            float theta = (float) (temp * 2 * Math.PI);
-            float thetaDeg = temp * 360;
-            float posn_x = (float) Math.cos(theta); // same as your circle code in your notes
-            float posn_y = (float) Math.sin(theta);
-			// insert your animation code to correct the position for the human rotating
-			//GL11.glTranslatef(speed, 0.0f, -10f);
-			GL11.glTranslatef(-temp*10, temp*50, temp*10);
-			GL11.glRotatef(-thetaDeg / 4 , 0.0f, 1.0f, 0.0f);
-		} else {
-//			GL11.glTranslatef(posn_x * 16 -25, speed * 10, posn_y * 16);
-//			GL11.glRotatef(-thetaDeg , 0.0f, 1.0f, 0.0f);
-			// bad animation version
-			//GL11.glTranslatef(posn_x * 3.0f, 0.0f, posn_y * 3.0f);
-		}
 		// TODO rotate human to left
-		GL11.glRotatef(90,0,1,0);
-
-		MyHuman.beginPress = beginPress;
-		isTouched = MyHuman.isTouched;
-
-		MyHuman.DrawHuman(speed * 8, isLaunched); // give a delta for the Human object ot be animated
-		isLaunched = MyHuman.isPressed;
+		GL11.glRotatef(angle,0,1,0);
+        human.DrawHuman(speed * 8, isLaunched); // give a delta for the RobotCat object ot be animated
+//		myRobotCat.beginPress = beginPress;
+//		isTouched = myRobotCat.isTouched;
+//		isLaunched = myRobotCat.isPressed;
 		GL11.glPopMatrix();
 	}
 
@@ -618,6 +583,14 @@ public class MainWindow {
 	Texture joint_texture;
 	Texture background_sky;
 	Texture ground_texture;
+	Texture target;
+	Texture sky;
+	Texture wall;
+	Texture wallFront;
+	Texture door;
+	Texture wallSide;
+	Texture child;
+//	Texture rocketBody;
 	/*
 	 * Any additional textures for your assignment should be written in here. Make a
 	 * new texture variable for each one so they can be loaded in at the beginning
@@ -627,13 +600,22 @@ public class MainWindow {
 		// TODO:add texture here
 		texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("res/earthspace.png"));
 		sign_texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("res/sign.png"));
-		head_texture = TextureLoader.getTexture("JPG", ResourceLoader.getResourceAsStream("res/head.jpg"));
+		head_texture = TextureLoader.getTexture("PNG", ResourceLoader.getResourceAsStream("res/head.png"));
 		upperbody_texture = TextureLoader.getTexture("JPG", ResourceLoader.getResourceAsStream("res/upperbody.jpg"));
 		lowerbody_texture = TextureLoader.getTexture("JPG", ResourceLoader.getResourceAsStream("res/lowerbody.jpg"));
 		joint_texture = TextureLoader.getTexture("JPG", ResourceLoader.getResourceAsStream("res/joint.jpg"));
 		background_sky = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/background_sky.jpg"));
-		ground_texture = TextureLoader.getTexture("PNG",ResourceLoader.getResourceAsStream("res/2018.png"));
+		target = TextureLoader.getTexture("PNG",ResourceLoader.getResourceAsStream("res/2018.png"));
+		ground_texture = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/ground.jpg"));
+		sky = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/sky.jpg"));
+		wall = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/wall.jpg"));
+        wallFront = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/wall1.jpg"));
+        wallSide = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/wall2.jpg"));
+        door = TextureLoader.getTexture("JPG",ResourceLoader.getResourceAsStream("res/door.jpg"));
+        child = TextureLoader.getTexture("PNG",ResourceLoader.getResourceAsStream("res/2018.png"));
+//        rocketBody = TextureLoader.getTexture("PNG",ResourceLoader.getResourceAsStream("res/rocketBodyS.png"));
 		System.out.println("Texture loaded okay ");
+
 	}
 
 }

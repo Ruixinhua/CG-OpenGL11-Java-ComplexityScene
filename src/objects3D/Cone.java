@@ -33,6 +33,7 @@ public class Cone {
             Vector4f normal = v.cross(w).Normal();
             GL11.glNormal3f(normal.x, normal.y, normal.z);
             for (int j = 0; j < 3; j++) {
+                GL11.glNormal3f(vertices[j].x, vertices[j].y, vertices[j].z);
                 GL11.glVertex3f(vertices[j].x, vertices[j].y, vertices[j].z);
             }
 
